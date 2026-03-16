@@ -1,0 +1,6 @@
+node_modules/
+data/
+.env
+frontend/dist/
+.wwebjs_auth/
+*.log
