@@ -1,13 +1,18 @@
-const yahooFinance = require('yahoo-finance2').default;
-
-// Suppress yahoo-finance2 validation notices
-yahooFinance.setGlobalConfig({ validation: { logErrors: false } });
+let _yf;
+async function getYF() {
+  if (!_yf) {
+    const { default: YahooFinance } = await import('yahoo-finance2');
+    _yf = new YahooFinance();
+  }
+  return _yf;
+}
 
 /**
  * Search for ETFs/stocks by query string
  */
 async function searchTicker(query) {
   try {
+    const yahooFinance = await getYF();
     const results = await yahooFinance.search(query, { newsCount: 0, quotesCount: 8 });
     return (results.quotes || []).map(q => ({
       ticker: q.symbol,
@@ -25,6 +30,7 @@ async function searchTicker(query) {
  * Get current quote for a ticker
  */
 async function getQuote(ticker) {
+  const yahooFinance = await getYF();
   const result = await yahooFinance.quote(ticker, {
     fields: ['regularMarketPrice', 'regularMarketChangePercent', 'shortName', 'longName', 'currency'],
   });
@@ -53,7 +59,7 @@ async function getHistory(ticker, period = '1y') {
   };
 
   const params = periodMap[period] || periodMap['1y'];
-
+  const yahooFinance = await getYF();
   const data = await yahooFinance.chart(ticker, {
     period1: params.period1,
     interval: params.interval,
@@ -77,6 +83,7 @@ async function getHistory(ticker, period = '1y') {
  */
 async function getATH(ticker) {
   try {
+    const yahooFinance = await getYF();
     const data = await yahooFinance.chart(ticker, {
       period1: new Date('1970-01-01'),
       interval: '1mo',
@@ -104,6 +111,7 @@ async function getATH(ticker) {
  */
 async function getPriceNDaysAgo(ticker, days) {
   try {
+    const yahooFinance = await getYF();
     const data = await yahooFinance.chart(ticker, {
       period1: daysAgo(days + 5),
       interval: '1d',
