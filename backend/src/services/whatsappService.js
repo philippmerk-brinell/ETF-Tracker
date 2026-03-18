@@ -59,7 +59,7 @@ function getConfig() {
 
 async function sendMessage(text) {
   const cfg = getConfig();
-  if (!cfg || !cfg.whatsapp_enabled || !cfg.whatsapp_to_number) return false;
+  if (!cfg || !cfg.whatsapp_enabled || !cfg.whatsapp_to_number) return null;
   if (status !== 'connected' || !client) {
     console.warn('WhatsApp not connected, skipping message.');
     return false;

@@ -56,6 +56,7 @@ router.put('/config', (req, res) => {
 });
 
 // POST /api/notifications/test
+// Returns: true = sent OK, false = configured but failed, null = not enabled/configured
 router.post('/test', async (req, res) => {
   const results = await Promise.allSettled([
     sendTestEmail(),

@@ -7,7 +7,7 @@ function getConfig() {
 
 async function sendEmail(subject, text) {
   const cfg = getConfig();
-  if (!cfg || !cfg.email_enabled || !cfg.email_recipient) return false;
+  if (!cfg || !cfg.email_enabled || !cfg.email_recipient) return null;
 
   const transporter = nodemailer.createTransport({
     host: cfg.email_smtp_host,

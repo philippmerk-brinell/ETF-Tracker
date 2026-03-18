@@ -29,7 +29,7 @@ export const alertApi = {
 export const notifApi = {
   getConfig: () => api.get<NotificationConfig>('/notifications/config').then(r => r.data),
   setConfig: (config: Partial<NotificationConfig>) => api.put<NotificationConfig>('/notifications/config', config).then(r => r.data),
-  sendTest: () => api.post<{ email: boolean; whatsapp: boolean }>('/notifications/test').then(r => r.data),
+  sendTest: () => api.post<{ email: boolean | null; whatsapp: boolean | null }>('/notifications/test').then(r => r.data),
   getWhatsAppStatus: () => api.get<{ status: string }>('/notifications/whatsapp/status').then(r => r.data),
   getWhatsAppQR: () => api.get<{ qr: string; status: string }>('/notifications/whatsapp/qr').then(r => r.data),
 };

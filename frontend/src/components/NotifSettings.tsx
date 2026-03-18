@@ -8,7 +8,7 @@ export default function NotifSettings() {
   const [form, setForm] = useState<Partial<NotificationConfig>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [testResult, setTestResult] = useState<{ email: boolean; whatsapp: boolean } | null>(null);
+  const [testResult, setTestResult] = useState<{ email: boolean | null; whatsapp: boolean | null } | null>(null);
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
@@ -171,7 +171,9 @@ export default function NotifSettings() {
 
         {testResult && (
           <div className="text-sm text-gray-300">
-            E-Mail: {testResult.email ? '✓' : '✗'} · WhatsApp: {testResult.whatsapp ? '✓' : '✗'}
+            E-Mail: {testResult.email === null ? <span className="text-gray-500">deaktiviert</span> : testResult.email ? <span className="text-green-400">✓ OK</span> : <span className="text-red-400">✗ Fehler</span>}
+            {' · '}
+            WhatsApp: {testResult.whatsapp === null ? <span className="text-gray-500">deaktiviert</span> : testResult.whatsapp ? <span className="text-green-400">✓ OK</span> : <span className="text-red-400">✗ Fehler</span>}
           </div>
         )}
       </div>
