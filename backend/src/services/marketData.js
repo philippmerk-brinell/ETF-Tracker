@@ -4,8 +4,8 @@ const UA = 'Mozilla/5.0 (compatible; ETF-Tracker/1.0)';
 let _yf;
 async function getYF() {
   if (!_yf) {
-    const { default: YahooFinance } = await import('yahoo-finance2');
-    _yf = new YahooFinance();
+    const mod = await import('yahoo-finance2');
+    _yf = mod.default;
   }
   return _yf;
 }
