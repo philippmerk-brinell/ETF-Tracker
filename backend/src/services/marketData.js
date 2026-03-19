@@ -10,11 +10,16 @@ async function getYF() {
   return _yf;
 }
 
-/**
- * Search for ETFs/stocks by query string.
- * Uses Yahoo's v1 search API directly (no crumb needed).
- */
-async function searchTicker(query) {
+/** Detect if query looks like an ISIN or WKN */
+function detectQueryType(query) {
+  const q = query.trim().toUpperCase().replace(/\s/g, '');
+  if (/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(q)) return 'isin';
+  if (/^[A-Z0-9]{6}$/.test(q)) return 'wkn';
+  return 'text';
+}
+
+/** Raw Yahoo Finance search */
+async function searchYahoo(query) {
   try {
     const params = new URLSearchParams({
       q: query,
@@ -34,9 +39,53 @@ async function searchTicker(query) {
       type: q.quoteType,
     }));
   } catch (err) {
-    console.error('searchTicker error:', err.message);
+    console.error('searchYahoo error:', err.message);
     return [];
   }
+}
+
+/**
+ * Resolve WKN → ticker via OpenFIGI (free, no API key required).
+ * Returns the Yahoo-compatible ticker string or null.
+ */
+async function resolveWKNviaOpenFIGI(wkn) {
+  try {
+    const res = await fetch('https://api.openfigi.com/v3/mapping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify([{ idType: 'WKN', idValue: wkn }]),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = data[0]?.data;
+    if (!results?.length) return null;
+    // Prefer ETF entries, fall back to first result
+    const entry = results.find(r => r.securityType2 === 'ETF') || results[0];
+    return entry.ticker || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Search for ETFs/stocks by query string, ISIN, or WKN.
+ * - ISIN (12 chars): Yahoo Finance handles natively
+ * - WKN (6 alphanumeric chars): Yahoo first, then OpenFIGI fallback
+ * - Text: regular Yahoo search
+ */
+async function searchTicker(query) {
+  const type = detectQueryType(query);
+
+  const yahooResults = await searchYahoo(query);
+  if (yahooResults.length > 0) return yahooResults;
+
+  // WKN fallback: OpenFIGI resolves WKN → ticker → retry Yahoo search
+  if (type === 'wkn') {
+    const ticker = await resolveWKNviaOpenFIGI(query.trim().toUpperCase());
+    if (ticker) return searchYahoo(ticker);
+  }
+
+  return [];
 }
 
 /**
