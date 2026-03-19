@@ -15,12 +15,15 @@ async function withRetry(fn, retries = 3, delayMs = 2000) {
     try {
       return await fn();
     } catch (err) {
-      const is429 = err.message?.includes('429') || err.message?.includes('Too Many Requests');
+      const is429 = err.code === 429
+        || err.message?.includes('429')
+        || err.message?.includes('Too Many Requests');
       if (is429 && attempt < retries) {
         console.warn(`[marketData] 429 – warte ${delayMs}ms, Versuch ${attempt + 1}/${retries}`);
         await new Promise(r => setTimeout(r, delayMs));
         delayMs *= 2;
       } else {
+        console.error(`[marketData] Fehler (code=${err.code}, msg="${err.message}")`);
         throw err;
       }
     }

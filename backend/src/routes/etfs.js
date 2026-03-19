@@ -47,6 +47,7 @@ router.post('/', async (req, res) => {
     const etf = db.prepare('SELECT * FROM etfs WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(etf);
   } catch (err) {
+    console.error(`[POST /api/etfs] Ticker "${t}" fehlgeschlagen: code=${err.code} msg="${err.message}"`);
     res.status(400).json({ error: `Cannot find ticker "${t}": ${err.message}` });
   }
 });
