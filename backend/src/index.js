@@ -26,8 +26,8 @@ if (require('fs').existsSync(frontendDist)) {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`ETF Tracker backend running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`ETF Tracker backend running on http://0.0.0.0:${PORT}`);
 
   // Start WhatsApp client
   const { init } = require('./services/whatsappService');
