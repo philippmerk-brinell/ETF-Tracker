@@ -5,7 +5,7 @@ let _yf;
 async function getYF() {
   if (!_yf) {
     const mod = await import('yahoo-finance2');
-    _yf = mod.default;
+    _yf = new mod.default();
   }
   return _yf;
 }
