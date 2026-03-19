@@ -1,3 +1,6 @@
+const YF_HOST = 'https://query2.finance.yahoo.com';
+const UA = 'Mozilla/5.0 (compatible; ETF-Tracker/1.0)';
+
 let _yf;
 async function getYF() {
   if (!_yf) {
@@ -8,13 +11,23 @@ async function getYF() {
 }
 
 /**
- * Search for ETFs/stocks by query string
+ * Search for ETFs/stocks by query string.
+ * Uses Yahoo's v1 search API directly (no crumb needed).
  */
 async function searchTicker(query) {
   try {
-    const yahooFinance = await getYF();
-    const results = await yahooFinance.search(query, { newsCount: 0, quotesCount: 8 });
-    return (results.quotes || []).map(q => ({
+    const params = new URLSearchParams({
+      q: query,
+      quotesCount: '8',
+      newsCount: '0',
+      lang: 'de-DE',
+    });
+    const res = await fetch(`${YF_HOST}/v1/finance/search?${params}`, {
+      headers: { 'User-Agent': UA },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return (data.quotes || []).map(q => ({
       ticker: q.symbol,
       display_name: q.shortname || q.longname || q.symbol,
       exchange: q.exchange,
@@ -27,13 +40,12 @@ async function searchTicker(query) {
 }
 
 /**
- * Get current quote for a ticker
+ * Get current quote for a ticker.
+ * Uses yahoo-finance2 which handles crumb/cookie auth.
  */
 async function getQuote(ticker) {
-  const yahooFinance = await getYF();
-  const result = await yahooFinance.quote(ticker, {
-    fields: ['regularMarketPrice', 'regularMarketChangePercent', 'shortName', 'longName', 'currency'],
-  });
+  const yf = await getYF();
+  const result = await yf.quote(ticker);
   return {
     ticker,
     display_name: result.shortName || result.longName || ticker,
@@ -44,62 +56,71 @@ async function getQuote(ticker) {
 }
 
 /**
- * Get OHLCV price history for charting
+ * Fetch raw chart data from Yahoo v8 API.
+ */
+async function fetchChart(ticker, range, interval) {
+  const params = new URLSearchParams({ range, interval });
+  const res = await fetch(`${YF_HOST}/v8/finance/chart/${encodeURIComponent(ticker)}?${params}`, {
+    headers: { 'User-Agent': UA },
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const result = data.chart?.result?.[0];
+  if (!result) throw new Error('No chart data returned');
+  return result;
+}
+
+/**
+ * Get OHLCV price history for charting.
  * period: '1w', '1mo', '3mo', '6mo', '1y', '5y', 'max'
  */
 async function getHistory(ticker, period = '1y') {
   const periodMap = {
-    '1w': { period1: daysAgo(7), interval: '1d' },
-    '1mo': { period1: daysAgo(30), interval: '1d' },
-    '3mo': { period1: daysAgo(90), interval: '1d' },
-    '6mo': { period1: daysAgo(180), interval: '1d' },
-    '1y': { period1: daysAgo(365), interval: '1d' },
-    '5y': { period1: daysAgo(365 * 5), interval: '1wk' },
-    'max': { period1: new Date('1970-01-01'), interval: '1mo' },
+    '1w':  { range: '5d',  interval: '1d' },
+    '1mo': { range: '1mo', interval: '1d' },
+    '3mo': { range: '3mo', interval: '1d' },
+    '6mo': { range: '6mo', interval: '1d' },
+    '1y':  { range: '1y',  interval: '1d' },
+    '5y':  { range: '5y',  interval: '1wk' },
+    'max': { range: 'max', interval: '1mo' },
   };
 
   const params = periodMap[period] || periodMap['1y'];
-  const yahooFinance = await getYF();
-  const data = await yahooFinance.chart(ticker, {
-    period1: params.period1,
-    interval: params.interval,
-  });
+  const chart = await fetchChart(ticker, params.range, params.interval);
 
-  const quotes = data.quotes || [];
-  return quotes
-    .filter(q => q.close != null)
-    .map(q => ({
-      date: q.date instanceof Date ? q.date.toISOString().split('T')[0] : q.date,
-      open: q.open,
-      high: q.high,
-      low: q.low,
-      close: q.close,
-      volume: q.volume,
-    }));
+  const timestamps = chart.timestamp || [];
+  const quotes = chart.indicators?.quote?.[0] || {};
+
+  return timestamps
+    .map((ts, i) => ({
+      date: new Date(ts * 1000).toISOString().split('T')[0],
+      open: quotes.open?.[i],
+      high: quotes.high?.[i],
+      low: quotes.low?.[i],
+      close: quotes.close?.[i],
+      volume: quotes.volume?.[i],
+    }))
+    .filter(q => q.close != null);
 }
 
 /**
- * Get All-Time-High price and date for a ticker
+ * Get All-Time-High price and date for a ticker.
  */
 async function getATH(ticker) {
   try {
-    const yahooFinance = await getYF();
-    const data = await yahooFinance.chart(ticker, {
-      period1: new Date('1970-01-01'),
-      interval: '1mo',
-    });
-    const quotes = (data.quotes || []).filter(q => q.high != null);
-    if (!quotes.length) return { ath_price: null, ath_date: null };
+    const chart = await fetchChart(ticker, 'max', '1mo');
+    const timestamps = chart.timestamp || [];
+    const highs = chart.indicators?.quote?.[0]?.high || [];
 
     let athPrice = -Infinity;
     let athDate = null;
-    for (const q of quotes) {
-      if (q.high > athPrice) {
-        athPrice = q.high;
-        athDate = q.date instanceof Date ? q.date.toISOString().split('T')[0] : q.date;
+    for (let i = 0; i < timestamps.length; i++) {
+      if (highs[i] != null && highs[i] > athPrice) {
+        athPrice = highs[i];
+        athDate = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
       }
     }
-    return { ath_price: athPrice, ath_date: athDate };
+    return athPrice > 0 ? { ath_price: athPrice, ath_date: athDate } : { ath_price: null, ath_date: null };
   } catch (err) {
     console.error(`getATH error for ${ticker}:`, err.message);
     return { ath_price: null, ath_date: null };
@@ -107,27 +128,17 @@ async function getATH(ticker) {
 }
 
 /**
- * Get price from N days ago for computing weekly change
+ * Get price from N days ago for computing weekly change.
  */
 async function getPriceNDaysAgo(ticker, days) {
   try {
-    const yahooFinance = await getYF();
-    const data = await yahooFinance.chart(ticker, {
-      period1: daysAgo(days + 5),
-      interval: '1d',
-    });
-    const quotes = (data.quotes || []).filter(q => q.close != null);
-    if (!quotes.length) return null;
-    return quotes[0].close;
+    const chart = await fetchChart(ticker, `${days + 5}d`, '1d');
+    const closes = chart.indicators?.quote?.[0]?.close || [];
+    const valid = closes.filter(c => c != null);
+    return valid.length ? valid[0] : null;
   } catch {
     return null;
   }
-}
-
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d;
 }
 
 module.exports = { searchTicker, getQuote, getHistory, getATH, getPriceNDaysAgo };
