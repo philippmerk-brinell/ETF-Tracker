@@ -10,6 +10,23 @@ async function getYF() {
   return _yf;
 }
 
+async function withRetry(fn, retries = 3, delayMs = 2000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const is429 = err.message?.includes('429') || err.message?.includes('Too Many Requests');
+      if (is429 && attempt < retries) {
+        console.warn(`[marketData] 429 – warte ${delayMs}ms, Versuch ${attempt + 1}/${retries}`);
+        await new Promise(r => setTimeout(r, delayMs));
+        delayMs *= 2;
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 /** Detect if query looks like an ISIN or WKN */
 function detectQueryType(query) {
   const q = query.trim().toUpperCase().replace(/\s/g, '');
@@ -94,7 +111,7 @@ async function searchTicker(query) {
  */
 async function getQuote(ticker) {
   const yf = await getYF();
-  const result = await yf.quote(ticker);
+  const result = await withRetry(() => yf.quote(ticker));
   return {
     ticker,
     display_name: result.shortName || result.longName || ticker,
@@ -109,10 +126,14 @@ async function getQuote(ticker) {
  */
 async function fetchChart(ticker, range, interval) {
   const params = new URLSearchParams({ range, interval });
-  const res = await fetch(`${YF_HOST}/v8/finance/chart/${encodeURIComponent(ticker)}?${params}`, {
-    headers: { 'User-Agent': UA },
+  const res = await withRetry(async () => {
+    const r = await fetch(`${YF_HOST}/v8/finance/chart/${encodeURIComponent(ticker)}?${params}`, {
+      headers: { 'User-Agent': UA },
+    });
+    if (r.status === 429) throw new Error('429 Too Many Requests');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r;
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const result = data.chart?.result?.[0];
   if (!result) throw new Error('No chart data returned');
