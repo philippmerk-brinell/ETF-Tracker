@@ -4,6 +4,7 @@ export interface ETF {
   display_name: string | null;
   added_at: string;
   last_price: number | null;
+  change_pct: number | null;
   ath_price: number | null;
   ath_date: string | null;
   last_checked_at: string | null;

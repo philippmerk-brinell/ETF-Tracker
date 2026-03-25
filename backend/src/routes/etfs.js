@@ -40,9 +40,9 @@ router.post('/', async (req, res) => {
     const { ath_price, ath_date } = await getATH(t).catch(() => ({ ath_price: null, ath_date: null }));
 
     const result = db.prepare(`
-      INSERT INTO etfs (ticker, display_name, last_price, ath_price, ath_date)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(t, quote.display_name, quote.price, ath_price, ath_date);
+      INSERT INTO etfs (ticker, display_name, last_price, change_pct, ath_price, ath_date)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(t, quote.display_name, quote.price, quote.change_pct ?? null, ath_price, ath_date);
 
     const etf = db.prepare('SELECT * FROM etfs WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(etf);
@@ -73,9 +73,9 @@ router.post('/:ticker/refresh', async (req, res) => {
     ]);
 
     db.prepare(`
-      UPDATE etfs SET last_price = ?, display_name = ?, ath_price = ?, ath_date = ?, last_checked_at = datetime('now')
+      UPDATE etfs SET last_price = ?, change_pct = ?, display_name = ?, ath_price = ?, ath_date = ?, last_checked_at = datetime('now')
       WHERE ticker = ?
-    `).run(quote.price, quote.display_name, athData.ath_price, athData.ath_date, ticker);
+    `).run(quote.price, quote.change_pct ?? null, quote.display_name, athData.ath_price, athData.ath_date, ticker);
 
     const updated = db.prepare('SELECT * FROM etfs WHERE ticker = ?').get(ticker);
     res.json(updated);

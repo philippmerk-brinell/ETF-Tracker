@@ -24,6 +24,7 @@ function initDatabase() {
       display_name TEXT,
       added_at TEXT DEFAULT (datetime('now')),
       last_price REAL,
+      change_pct REAL,
       ath_price REAL,
       ath_date TEXT,
       last_checked_at TEXT
@@ -59,6 +60,12 @@ function initDatabase() {
       notified_whatsapp INTEGER DEFAULT 0
     );
   `);
+
+  // Migrate: add change_pct column if missing (for existing DBs)
+  const cols = db.prepare("PRAGMA table_info(etfs)").all().map(c => c.name);
+  if (!cols.includes('change_pct')) {
+    db.exec('ALTER TABLE etfs ADD COLUMN change_pct REAL');
+  }
 
   // Insert default rows if not present
   db.prepare(`

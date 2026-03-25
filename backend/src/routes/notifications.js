@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 const { sendTestEmail } = require('../services/emailService');
-const { sendTestMessage, getStatus, getQR } = require('../services/whatsappService');
+const { sendTestMessage, getStatus, getQR, init: initWhatsApp } = require('../services/whatsappService');
 
 // GET /api/notifications/config (masks password)
 router.get('/config', (req, res) => {
@@ -52,6 +52,12 @@ router.put('/config', (req, res) => {
   );
 
   const cfg = db.prepare('SELECT * FROM notification_config WHERE id = 1').get();
+
+  // If WhatsApp just got enabled, initialize the client on-demand
+  if (whatsapp_enabled && !getStatus().startsWith('connected')) {
+    initWhatsApp();
+  }
+
   res.json({ ...cfg, email_smtp_password: cfg.email_smtp_password ? '••••••••' : '' });
 });
 

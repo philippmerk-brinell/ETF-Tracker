@@ -29,9 +29,13 @@ if (require('fs').existsSync(frontendDist)) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`ETF Tracker backend running on http://0.0.0.0:${PORT}`);
 
-  // Start WhatsApp client
-  const { init } = require('./services/whatsappService');
-  init();
+  // Start WhatsApp client only if enabled in config
+  const db = require('./database');
+  const notifCfg = db.prepare('SELECT whatsapp_enabled FROM notification_config WHERE id = 1').get();
+  if (notifCfg?.whatsapp_enabled) {
+    const { init } = require('./services/whatsappService');
+    init();
+  }
 
   // Start alert scheduler
   const { startScheduler } = require('./scheduler');

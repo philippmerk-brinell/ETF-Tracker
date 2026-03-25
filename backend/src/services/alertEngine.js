@@ -46,10 +46,10 @@ async function checkETF(etf, config) {
 
   const { ticker, display_name, price, change_pct } = quote;
 
-  // Update cached price in DB
+  // Update cached price + daily change in DB
   db.prepare(`
-    UPDATE etfs SET last_price = ?, last_checked_at = datetime('now') WHERE ticker = ?
-  `).run(price, ticker);
+    UPDATE etfs SET last_price = ?, change_pct = ?, last_checked_at = datetime('now') WHERE ticker = ?
+  `).run(price, change_pct ?? null, ticker);
 
   // --- Daily drop alert ---
   if (change_pct != null && change_pct <= -config.daily_drop_pct) {

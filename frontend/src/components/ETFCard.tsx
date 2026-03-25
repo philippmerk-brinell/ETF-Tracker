@@ -17,13 +17,19 @@ function pct(value: number | null, total: number | null): number | null {
 export default function ETFCard({ etf, alertConfig, selected, onClick, onRemove, onRefresh }: Props) {
   const athGap = pct(etf.last_price, etf.ath_price);
   const athThreshold = alertConfig?.ath_drop_pct ?? 10;
+  const dailyThreshold = alertConfig?.daily_drop_pct ?? 3;
 
   const isAthWarning = athGap != null && athGap >= athThreshold;
+  const isDailyWarning = etf.change_pct != null && etf.change_pct <= -dailyThreshold;
 
   return (
     <div
       onClick={onClick}
-      className={`card cursor-pointer transition-all hover:border-blue-600 ${selected ? 'border-blue-500 ring-1 ring-blue-500' : ''}`}
+      className={`card cursor-pointer transition-all hover:border-blue-600 ${
+        selected ? 'border-blue-500 ring-1 ring-blue-500' :
+        isDailyWarning ? 'border-red-700' :
+        isAthWarning ? 'border-orange-700' : ''
+      }`}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0">
@@ -52,8 +58,15 @@ export default function ETFCard({ etf, alertConfig, selected, onClick, onRemove,
         </div>
       </div>
 
-      <div className="text-xl font-bold text-white mb-2">
-        {etf.last_price != null ? etf.last_price.toFixed(2) : '—'}
+      <div className="flex items-baseline gap-2 mb-2">
+        <div className="text-xl font-bold text-white">
+          {etf.last_price != null ? etf.last_price.toFixed(2) : '—'}
+        </div>
+        {etf.change_pct != null && (
+          <span className={`text-sm font-medium ${etf.change_pct >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {etf.change_pct >= 0 ? '+' : ''}{etf.change_pct.toFixed(2)}%
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-1.5">
