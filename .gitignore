@@ -4,3 +4,5 @@ data/
 frontend/dist/
 .wwebjs_auth/
 *.log
+__pycache__/
+*.pyc
