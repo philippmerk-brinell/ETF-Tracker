@@ -1,0 +1,91 @@
+etfs:
+  # Core — broad market
+  - ticker: IWDA.AS
+    name: iShares Core MSCI World Acc
+    category: core
+    isin: IE00B4L5Y983
+
+  - ticker: CSPX.AS
+    name: iShares Core S&P 500 Acc
+    category: core
+    isin: IE00B5BMR087
+
+  - ticker: EIMI.AS
+    name: iShares Core MSCI EM IMI Acc
+    category: core
+    isin: IE00BKM4GZ66
+
+  - ticker: VWCE.DE
+    name: Vanguard FTSE All-World Acc
+    category: core
+    isin: IE00BK5BQT80
+
+  # Satellites — thematic / regional
+  - ticker: SXRV.DE
+    name: iShares Nasdaq 100 Acc
+    category: satellite
+    isin: IE00B53SZB19
+
+  - ticker: SMH
+    name: VanEck Semiconductor ETF
+    category: satellite
+    isin: US92189F7915
+
+  - ticker: MEUD.PA
+    name: Amundi STOXX Europe 600
+    category: satellite
+    isin: FR0010756098
+
+  # Commodities
+  - ticker: 4GLD.DE
+    name: Xetra-Gold (tax-free after 1yr, DE)
+    category: commodity
+    isin: DE000A0S9GB0
+
+  - ticker: PPFB.L
+    name: iShares Physical Gold ETC
+    category: commodity
+    isin: IE00B4ND3602
+
+  # Factor ETFs
+  - ticker: IWVL.AS
+    name: iShares MSCI World Value Factor
+    category: factor
+    isin: IE00BP3QZB59
+
+  - ticker: IWMO.AS
+    name: iShares MSCI World Momentum Factor
+    category: factor
+    isin: IE00BP3QZJ36
+
+
+signals:
+  weights:
+    drawdown:    0.25   # Drawdown from ATH (per-ETF)
+    vix:         0.20   # VIX fear gauge (market-wide)
+    hy_spread:   0.15   # HY credit spread (market-wide)
+    rsi:         0.15   # RSI(14) oversold (per-ETF)
+    fear_greed:  0.10   # CNN Fear & Greed (market-wide)
+    sma200:      0.10   # Price vs 200-day SMA (per-ETF)
+    yield_curve: 0.05   # 10Y-2Y yield curve (market-wide, context only)
+
+  thresholds:
+    elevated: 50   # ⚠️  Elevated — consider adding
+    strong:   65   # 🚨  Strong buy signal
+    extreme:  80   # 🔴  Extreme — rare opportunity
+
+
+alerts:
+  cooldowns:
+    elevated: 24   # hours before re-alerting same level per ticker
+    strong:   12
+    extreme:  6
+
+  webhook:
+    enabled: true   # POST to MAKE_WEBHOOK_URL from .env
+
+
+data:
+  yfinance_period: "1y"   # period for price history; use "5y" for truer ATH
+  sma_window: 200
+  rsi_window: 14

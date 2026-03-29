@@ -1,0 +1,9 @@
+yfinance>=0.2.50
+pandas>=2.0
+numpy>=1.26
+ta>=0.11
+fredapi>=0.5
+requests>=2.31
+python-dotenv>=1.0
+PyYAML>=6.0
+fear-greed>=0.3
