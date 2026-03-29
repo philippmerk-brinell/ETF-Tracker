@@ -6,7 +6,6 @@ No I/O. All inputs are floats or pandas Series.
 """
 import numpy as np
 import pandas as pd
-from ta.momentum import RSIIndicator
 
 
 def _piecewise_linear(value: float, breakpoints: list) -> float:
@@ -139,10 +138,12 @@ def score_sma200(price: float, sma200: float) -> dict:
 def score_yield_curve(spread: float) -> dict:
     """
     10Y-2Y yield curve spread (context signal, capped at 70).
-    Breakpoints: (0.5,0), (0.2,20), (0.0,50), (-0.5,70)
+    Higher spread = normal (score 0). Inverted = highest signal (score 70).
+    Negate input so numpy.interp can use ascending x-axis.
+    Breakpoints on -spread: (-0.5,0), (-0.2,20), (0.0,50), (0.5,70)
     """
-    breakpoints = [(0.5, 0), (0.2, 20), (0.0, 50), (-0.5, 70)]
-    score = max(0.0, min(70.0, _piecewise_linear(spread, breakpoints)))
+    breakpoints = [(-0.5, 0), (-0.2, 20), (0.0, 50), (0.5, 70)]
+    score = max(0.0, min(70.0, _piecewise_linear(-spread, breakpoints)))
 
     return {
         "value": round(spread, 3),
@@ -152,11 +153,21 @@ def score_yield_curve(spread: float) -> dict:
 
 
 def compute_rsi_from_series(close_series: pd.Series, window: int = 14) -> float:
-    """Compute RSI from a Close price Series using the ta library."""
+    """
+    Compute RSI using Wilder's smoothing method (pure pandas, no external library).
+    Equivalent to the standard RSI-14 used in most charting software.
+    """
     if len(close_series) < window + 1:
         raise ValueError(f"Need at least {window + 1} data points for RSI-{window}, got {len(close_series)}")
-    rsi_indicator = RSIIndicator(close=close_series, window=window)
-    return float(rsi_indicator.rsi().dropna().iloc[-1])
+    delta = close_series.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    # Wilder's smoothing = exponential weighted with alpha = 1/window
+    avg_gain = gain.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1 / window, min_periods=window, adjust=False).mean()
+    rs = avg_gain / avg_loss.replace(0, float("nan"))
+    rsi = 100 - (100 / (1 + rs))
+    return float(rsi.dropna().iloc[-1])
 
 
 def compute_sma(close_series: pd.Series, window: int = 200) -> float:
