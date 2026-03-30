@@ -39,7 +39,7 @@ from signal_engine.signal_calculator import (
 )
 from signal_engine.signal_aggregator import compute_composite, composite_to_alert_level
 from signal_engine.state_manager import init_db, should_alert, save_alert, save_run
-from signal_engine.alert_dispatcher import build_payload, send_webhook, send_telegram, send_callmebot
+from signal_engine.alert_dispatcher import build_payload, send_webhook, send_telegram, send_callmebot, send_daily_digest
 
 
 def setup_logging():
@@ -274,6 +274,14 @@ def main():
     for r in sorted(results_summary, key=lambda x: x["score"], reverse=True):
         log.info(f"  {r['ticker']:<12} {r['score']:>7.1f}  {r['level']}")
     log.info("=== Done ===\n")
+
+    # -----------------------------------------------------------------------
+    # Daily digest — always sends once per run when Telegram is configured
+    # -----------------------------------------------------------------------
+    if not args.dry_run and TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        sorted_summary = sorted(results_summary, key=lambda x: x["score"], reverse=True)
+        ok = send_daily_digest(sorted_summary, macro, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+        log.info(f"Daily digest: {'sent' if ok else 'FAILED'}")
 
 
 if __name__ == "__main__":

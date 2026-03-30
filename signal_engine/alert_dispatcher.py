@@ -149,3 +149,48 @@ def send_callmebot(message_text: str, phone: str, api_key: str) -> bool:
     except requests.RequestException as e:
         print(f"[dispatcher] CallMeBot request failed: {e}")
         return False
+
+
+def send_daily_digest(results_summary: list, macro: dict, bot_token: str, chat_id: str) -> bool:
+    """
+    Send a daily summary of all ETF scores to Telegram.
+    Fires unconditionally once per run — used for testing and daily awareness
+    before the alert thresholds are calibrated.
+
+    results_summary: list of {"ticker", "name", "score", "level"} dicts (sorted by score)
+    macro: dict with keys "vix", "hy_spread", "yield_curve", "fear_greed" — each with "value" and "score"
+    """
+    from datetime import datetime, timezone
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    level_icons = {
+        "extreme":  "🔴",
+        "strong":   "🚨",
+        "elevated": "⚠️",
+        "monitor":  "👀",
+        "no_action": "✅",
+    }
+
+    rows = []
+    for r in results_summary:
+        icon = level_icons.get(r["level"], "•")
+        rows.append(f"{icon} {r['ticker']:<10} {r['score']:>5.1f}  {r['level']}")
+
+    macro_lines = []
+    if "vix" in macro:
+        macro_lines.append(f"  VIX:          {macro['vix']['value']:.1f}  (score {macro['vix']['score']:.0f})")
+    if "hy_spread" in macro:
+        macro_lines.append(f"  HY Spread:    {macro['hy_spread']['value']:.2f}%  (score {macro['hy_spread']['score']:.0f})")
+    if "yield_curve" in macro:
+        macro_lines.append(f"  Yield Curve:  {macro['yield_curve']['value']:.3f}%  (score {macro['yield_curve']['score']:.0f})")
+    if "fear_greed" in macro:
+        macro_lines.append(f"  Fear & Greed: {int(macro['fear_greed']['value'])}  (score {macro['fear_greed']['score']:.0f})")
+
+    message = (
+        f"📊 *ETF Daily Digest — {timestamp}*\n\n"
+        + "\n".join(rows)
+        + "\n\n*Macro:*\n"
+        + "\n".join(macro_lines)
+    )
+
+    return send_telegram(message, bot_token, chat_id)
