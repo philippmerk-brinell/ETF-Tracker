@@ -39,10 +39,11 @@ def get_price_data(tickers: list, period: str = "1y") -> dict:
     result = {}
     for ticker in tickers:
         try:
-            if len(tickers) == 1:
-                df = raw.copy()
-            else:
+            # yfinance returns flat columns for single ticker, MultiIndex for multiple
+            if isinstance(raw.columns, pd.MultiIndex):
                 df = raw[ticker].copy()
+            else:
+                df = raw.copy()
             df = df.dropna(subset=["Close"])
             if df.empty:
                 print(f"[data_fetcher] WARNING: No data for {ticker}")
