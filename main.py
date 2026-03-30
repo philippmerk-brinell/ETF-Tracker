@@ -39,7 +39,7 @@ from signal_engine.signal_calculator import (
 )
 from signal_engine.signal_aggregator import compute_composite, composite_to_alert_level
 from signal_engine.state_manager import init_db, should_alert, save_alert, save_run
-from signal_engine.alert_dispatcher import send_webhook
+from signal_engine.alert_dispatcher import build_payload, send_webhook, send_telegram, send_callmebot
 
 
 def setup_logging():
@@ -76,7 +76,11 @@ def main():
 
     # --- Load credentials ---
     load_dotenv()
-    MAKE_WEBHOOK_URL = os.environ.get("MAKE_WEBHOOK_URL", "")
+    MAKE_WEBHOOK_URL   = os.environ.get("MAKE_WEBHOOK_URL", "")
+    TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID", "")
+    CALLMEBOT_PHONE    = os.environ.get("CALLMEBOT_PHONE", "")
+    CALLMEBOT_APIKEY   = os.environ.get("CALLMEBOT_APIKEY", "")
 
     # --- Load config ---
     config = load_config(args.config)
@@ -226,16 +230,37 @@ def main():
             log.info(f"  Alert suppressed: '{alert_level}' already sent within {cooldown_hours}h")
             continue
 
-        # Send webhook to Make.com
+        # Send notifications via all configured channels
         notified = False
-        if webhook_enabled and MAKE_WEBHOOK_URL:
-            if args.dry_run:
-                log.info(f"  [DRY RUN] Would send {alert_level.upper()} webhook for {ticker} (score={result['composite_score']:.1f})")
-            else:
-                notified = send_webhook(ticker, name, result, alert_level, MAKE_WEBHOOK_URL)
-                log.info(f"  Webhook: {'OK' if notified else 'FAILED'}")
+        payload = build_payload(ticker, name, result, alert_level)
+        message_text = payload["message_text"]
+
+        any_sender_configured = (
+            (webhook_enabled and MAKE_WEBHOOK_URL)
+            or TELEGRAM_BOT_TOKEN
+            or CALLMEBOT_PHONE
+        )
+
+        if args.dry_run:
+            log.info(f"  [DRY RUN] Would send {alert_level.upper()} alert for {ticker} (score={result['composite_score']:.1f})")
         else:
-            log.warning(f"  Webhook not configured — set MAKE_WEBHOOK_URL in .env")
+            if webhook_enabled and MAKE_WEBHOOK_URL:
+                ok = send_webhook(ticker, name, result, alert_level, MAKE_WEBHOOK_URL)
+                log.info(f"  Make.com webhook: {'OK' if ok else 'FAILED'}")
+                notified = notified or ok
+
+            if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+                ok = send_telegram(message_text, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)
+                log.info(f"  Telegram: {'OK' if ok else 'FAILED'}")
+                notified = notified or ok
+
+            if CALLMEBOT_PHONE and CALLMEBOT_APIKEY:
+                ok = send_callmebot(message_text, CALLMEBOT_PHONE, CALLMEBOT_APIKEY)
+                log.info(f"  CallMeBot (WhatsApp): {'OK' if ok else 'FAILED'}")
+                notified = notified or ok
+
+            if not any_sender_configured:
+                log.warning("  No notification channel configured — set TELEGRAM_BOT_TOKEN, MAKE_WEBHOOK_URL, or CALLMEBOT_PHONE in .env")
 
         if not args.dry_run:
             save_alert(ticker, alert_level, result["composite_score"], notified)

@@ -107,3 +107,45 @@ def send_webhook(ticker: str, name: str, result: dict, level: str, webhook_url: 
     except requests.RequestException as e:
         print(f"[dispatcher] Webhook request failed: {e}")
         return False
+
+
+def send_telegram(message_text: str, bot_token: str, chat_id: str) -> bool:
+    """
+    Send message via Telegram Bot API (free, no third party).
+    Get bot_token from @BotFather, chat_id from getUpdates after messaging your bot.
+    """
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    try:
+        resp = requests.post(url, json={
+            "chat_id": chat_id,
+            "text": message_text,
+            "parse_mode": "Markdown",
+        }, timeout=15)
+        if resp.status_code < 300:
+            return True
+        print(f"[dispatcher] Telegram error {resp.status_code}: {resp.text[:200]}")
+        return False
+    except requests.RequestException as e:
+        print(f"[dispatcher] Telegram request failed: {e}")
+        return False
+
+
+def send_callmebot(message_text: str, phone: str, api_key: str) -> bool:
+    """
+    Send WhatsApp message via CallMeBot (free).
+    Register at callmebot.com: save +34 644 60 78 85 as a contact,
+    send 'I allow callmebot to send me messages' on WhatsApp to get your API key.
+    phone: international format without + (e.g. 49171xxxxxxx)
+    """
+    import urllib.parse
+    encoded = urllib.parse.quote(message_text)
+    url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={encoded}&apikey={api_key}"
+    try:
+        resp = requests.get(url, timeout=15)
+        if resp.status_code < 300:
+            return True
+        print(f"[dispatcher] CallMeBot error {resp.status_code}: {resp.text[:200]}")
+        return False
+    except requests.RequestException as e:
+        print(f"[dispatcher] CallMeBot request failed: {e}")
+        return False
