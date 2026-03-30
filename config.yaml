@@ -10,7 +10,7 @@ etfs:
     category: core
     isin: IE00B5BMR087
 
-  - ticker: EIMI.AS
+  - ticker: EMIM.AS
     name: iShares Core MSCI EM IMI Acc
     category: core
     isin: IE00BKM4GZ66
@@ -42,18 +42,18 @@ etfs:
     category: commodity
     isin: DE000A0S9GB0
 
-  - ticker: PPFB.L
+  - ticker: IGLN.L
     name: iShares Physical Gold ETC
     category: commodity
     isin: IE00B4ND3602
 
   # Factor ETFs
-  - ticker: IWVL.AS
+  - ticker: IWVL.L
     name: iShares MSCI World Value Factor
     category: factor
     isin: IE00BP3QZB59
 
-  - ticker: IWMO.AS
+  - ticker: IWMO.L
     name: iShares MSCI World Momentum Factor
     category: factor
     isin: IE00BP3QZJ36

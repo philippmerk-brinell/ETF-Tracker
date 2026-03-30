@@ -97,4 +97,7 @@ def get_fear_greed() -> int:
     Uses the fear_greed package which calls CNN's data API.
     """
     result = fear_greed.get()
+    # v0.1.0 returns a dict; later versions return an object with .value
+    if isinstance(result, dict):
+        return int(result["value"])
     return int(result.value)

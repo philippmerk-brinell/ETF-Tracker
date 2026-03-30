@@ -124,28 +124,28 @@ def main():
     try:
         vix_val = get_vix()
         macro["vix"] = score_vix(vix_val)
-        log.info(f"  VIX:          {vix_val:.1f}  → score {macro['vix']['score']}")
+        log.info(f"  VIX:          {vix_val:.1f}  -> score {macro['vix']['score']}")
     except Exception as e:
         log.warning(f"  VIX fetch failed: {e}")
 
     try:
         hy_val = get_hy_spread()
         macro["hy_spread"] = score_hy_spread(hy_val)
-        log.info(f"  HY Spread:    {hy_val:.2f}%  → score {macro['hy_spread']['score']}")
+        log.info(f"  HY Spread:    {hy_val:.2f}%  -> score {macro['hy_spread']['score']}")
     except Exception as e:
         log.warning(f"  HY spread fetch failed: {e}")
 
     try:
         yc_val = get_yield_curve()
         macro["yield_curve"] = score_yield_curve(yc_val)
-        log.info(f"  Yield Curve:  {yc_val:.3f}%  → score {macro['yield_curve']['score']}")
+        log.info(f"  Yield Curve:  {yc_val:.3f}%  -> score {macro['yield_curve']['score']}")
     except Exception as e:
         log.warning(f"  Yield curve fetch failed: {e}")
 
     try:
         fg_val = get_fear_greed()
         macro["fear_greed"] = score_fear_greed(fg_val)
-        log.info(f"  Fear & Greed: {fg_val}  → score {macro['fear_greed']['score']}")
+        log.info(f"  Fear & Greed: {fg_val}  -> score {macro['fear_greed']['score']}")
     except Exception as e:
         log.warning(f"  Fear & Greed fetch failed: {e}")
 
@@ -172,13 +172,13 @@ def main():
 
         # Drawdown from ATH
         signals["drawdown"] = score_drawdown(current_price, ath_price)
-        log.info(f"  Drawdown ATH: {signals['drawdown']['value']:.1f}%  → score {signals['drawdown']['score']}")
+        log.info(f"  Drawdown ATH: {signals['drawdown']['value']:.1f}%  -> score {signals['drawdown']['score']}")
 
         # RSI
         try:
             rsi_val = compute_rsi_from_series(close, window=rsi_window)
             signals["rsi"] = score_rsi(rsi_val)
-            log.info(f"  RSI({rsi_window}):        {rsi_val:.1f}  → score {signals['rsi']['score']}")
+            log.info(f"  RSI({rsi_window}):        {rsi_val:.1f}  -> score {signals['rsi']['score']}")
         except Exception as e:
             log.warning(f"  RSI failed: {e}")
 
@@ -186,7 +186,7 @@ def main():
         try:
             sma_val = compute_sma(close, window=sma_window)
             signals["sma200"] = score_sma200(current_price, sma_val)
-            log.info(f"  vs SMA{sma_window}:   {signals['sma200']['value']:.1f}% below  → score {signals['sma200']['score']}")
+            log.info(f"  vs SMA{sma_window}:   {signals['sma200']['value']:.1f}% below  -> score {signals['sma200']['score']}")
         except Exception as e:
             log.warning(f"  SMA failed: {e}")
 
@@ -200,7 +200,7 @@ def main():
         alert_level = composite_to_alert_level(result["composite_score"], thresholds)
         result["alert_level"] = alert_level
 
-        log.info(f"  Composite: {result['composite_score']:.1f}/100  → {alert_level.upper()}")
+        log.info(f"  Composite: {result['composite_score']:.1f}/100  -> {alert_level.upper()}")
         results_summary.append({
             "ticker": ticker,
             "name": name,
