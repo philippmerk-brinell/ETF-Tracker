@@ -194,6 +194,12 @@ def send_daily_digest(results_summary: list, macro: dict, bot_token: str, chat_i
         + "\n".join(rows)
         + "\n\n<b>Macro:</b>\n"
         + "\n".join(macro_lines)
+        + "\n\n<b>Score Guide:</b>\n"
+        + "  ✅ 0–29   No action — market calm\n"
+        + "  👀 30–49  Monitor — mild stress\n"
+        + "  ⚠️ 50–64  Elevated — reasonable entry\n"
+        + "  🚨 65–79  Strong — historically good zone\n"
+        + "  🔴 80+    Extreme — rare max opportunity"
     )
 
     return send_telegram(message, bot_token, chat_id)
