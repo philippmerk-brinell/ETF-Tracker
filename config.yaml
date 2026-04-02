@@ -1,59 +1,70 @@
 etfs:
   # Core — broad market
   - ticker: IWDA.AS
+    short_name: "MSCI World"
     name: iShares Core MSCI World Acc
     category: core
     isin: IE00B4L5Y983
 
   - ticker: CSPX.AS
+    short_name: "S&P 500"
     name: iShares Core S&P 500 Acc
     category: core
     isin: IE00B5BMR087
 
   - ticker: EMIM.AS
+    short_name: "EM Markets"
     name: iShares Core MSCI EM IMI Acc
     category: core
     isin: IE00BKM4GZ66
 
   - ticker: VWCE.DE
+    short_name: "FTSE All-World"
     name: Vanguard FTSE All-World Acc
     category: core
     isin: IE00BK5BQT80
 
   # Satellites — thematic / regional
   - ticker: SXRV.DE
+    short_name: "Nasdaq 100"
     name: iShares Nasdaq 100 Acc
     category: satellite
     isin: IE00B53SZB19
 
   - ticker: SMH
+    short_name: "Semiconductors"
     name: VanEck Semiconductor ETF
     category: satellite
     isin: US92189F7915
 
   - ticker: MEUD.PA
+    short_name: "Europe 600"
     name: Amundi STOXX Europe 600
     category: satellite
     isin: FR0010756098
 
   # Commodities
   - ticker: 4GLD.DE
+    short_name: "Xetra Gold"
     name: Xetra-Gold (tax-free after 1yr, DE)
     category: commodity
     isin: DE000A0S9GB0
 
   - ticker: IGLN.L
+    short_name: "Physical Gold"
     name: iShares Physical Gold ETC
     category: commodity
     isin: IE00B4ND3602
 
   # Factor ETFs
   - ticker: IWVL.L
+    short_name: "World Value"
     name: iShares MSCI World Value Factor
     category: factor
     isin: IE00BP3QZB59
 
   - ticker: IWMO.L
+    short_name: "World Momentum"
     name: iShares MSCI World Momentum Factor
     category: factor
     isin: IE00BP3QZJ36

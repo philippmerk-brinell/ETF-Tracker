@@ -208,6 +208,7 @@ def main():
         results_summary.append({
             "ticker": ticker,
             "name": name,
+            "short_name": etf_cfg.get("short_name", ticker),
             "score": result["composite_score"],
             "level": alert_level,
         })

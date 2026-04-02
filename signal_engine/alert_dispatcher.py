@@ -69,11 +69,11 @@ def build_payload(ticker: str, name: str, result: dict, level: str) -> dict:
     score_bar = "█" * score_bar_filled + "░" * (10 - score_bar_filled)
 
     message_text = (
-        f"{level_emoji.get(level, '📊')} *{level_labels.get(level, level.upper())}*\n"
+        f"{level_emoji.get(level, '📊')} <b>{level_labels.get(level, level.upper())}</b>\n"
         f"{ticker} — {name}\n\n"
         f"Composite Score: {composite:.1f}/100\n"
         f"[{score_bar}] {composite:.0f}%\n\n"
-        f"Signal Breakdown:\n"
+        f"<b>Signal Breakdown:</b>\n"
         + "\n".join(signal_lines)
         + f"\n\n🕐 {timestamp}"
     )
@@ -119,7 +119,7 @@ def send_telegram(message_text: str, bot_token: str, chat_id: str) -> bool:
         resp = requests.post(url, json={
             "chat_id": chat_id,
             "text": message_text,
-            "parse_mode": "Markdown",
+            "parse_mode": "HTML",
         }, timeout=15)
         if resp.status_code < 300:
             return True
@@ -174,7 +174,10 @@ def send_daily_digest(results_summary: list, macro: dict, bot_token: str, chat_i
     rows = []
     for r in results_summary:
         icon = level_icons.get(r["level"], "•")
-        rows.append(f"{icon} {r['ticker']:<10} {r['score']:>5.1f}  {r['level']}")
+        chart_url = f"https://finance.yahoo.com/chart/{r['ticker']}"
+        short_name = r.get("short_name", r["ticker"])
+        level_label = r["level"].replace("_", " ")
+        rows.append(f'{icon} <a href="{chart_url}">{short_name}</a>  {r["score"]:.1f}  {level_label}')
 
     macro_lines = []
     if "vix" in macro:
@@ -187,9 +190,9 @@ def send_daily_digest(results_summary: list, macro: dict, bot_token: str, chat_i
         macro_lines.append(f"  Fear & Greed: {int(macro['fear_greed']['value'])}  (score {macro['fear_greed']['score']:.0f})")
 
     message = (
-        f"📊 *ETF Daily Digest — {timestamp}*\n\n"
+        f"📊 <b>ETF Daily Digest — {timestamp}</b>\n\n"
         + "\n".join(rows)
-        + "\n\n*Macro:*\n"
+        + "\n\n<b>Macro:</b>\n"
         + "\n".join(macro_lines)
     )
 
