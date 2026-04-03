@@ -7,6 +7,9 @@ $Python     = "python"
 
 Set-Location $ProjectDir
 
+$env:PYTHONIOENCODING = 'utf-8'
+$env:PYTHONUTF8      = '1'
+
 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 Add-Content $LogFile "`n=== Run started: $timestamp ==="
 
